@@ -1,0 +1,12 @@
+{
+  "tables": [
+    "ta2.processed_clocking",
+    "ta2.uploaded_clocking"
+  ],
+  "envConnectionString": "HRPMPCONN",
+  "channels": {
+    "update": "table_watcher_update",
+    "delete": "table_watcher_delete",
+    "insert": "table_watcher_insert"
+  }
+}

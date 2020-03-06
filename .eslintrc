@@ -1,0 +1,19 @@
+{
+  "parser": "babel-eslint",
+  "env": {
+    "node": true,
+    "es6": true
+  },
+  "extends": "eslint-config-airbnb-base",
+  "rules": {
+    "no-template-curly-in-string": 0,
+    "indent": ["error", 2, { "SwitchCase": 1 }],
+    "no-console": 0,
+    "no-param-reassign": ["error", { "props": false }],
+    "max-len": ["error", 121, { "ignoreStrings": true, "ignoreTemplateLiterals": true }],
+    "class-methods-use-this": 0,
+    "no-unused-vars": ["error", {"args": "after-used"}],
+    "consistent-return": 0,
+    "no-restricted-syntax": ["error", "WithStatement", "BinaryExpression[operator='in']"]
+  }
+}

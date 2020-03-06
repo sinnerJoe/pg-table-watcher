@@ -1,0 +1,27 @@
+{
+  "name": "table-watcher",
+  "version": "1.0.0",
+  "description": "Watches and reverts table states on command",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon ./index.js",
+    "lint": "eslint lib --fix"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-eslint": "^8.0.1",
+    "babel-plugin-transform-es2015-modules-commonjs": "^6.26.0",
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
+    "eslint": "^3.12.2",
+    "eslint-config-airbnb": "^13.0.0",
+    "eslint-plugin-import": "^2.2.0",
+    "eslint-plugin-jsx-a11y": "^2.2.3",
+    "eslint-plugin-react": "^6.8.0",
+    "nodemon": "^1.11.0"
+  },
+  "dependencies": {
+    "pg-promise": "^5.9.5"
+  },
+  "author": "Radu Cebotari",
+  "license": "ISC"
+}
