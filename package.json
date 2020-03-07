@@ -20,7 +20,9 @@
     "nodemon": "^1.11.0"
   },
   "dependencies": {
-    "pg-promise": "^5.9.5"
+    "pg-promise": "^5.9.5",
+    "as-table": "1.0.55",
+    "ansicolor": "1.1.93"
   },
   "author": "Radu Cebotari",
   "license": "ISC"

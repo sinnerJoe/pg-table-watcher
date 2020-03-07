@@ -1,5 +1,10 @@
 
-const Pg = require('pg-promise');
+const { green, red, bright, magenta } = require('ansicolor');
+const drawTable = require('as-table').configure({ 
+  maxWidth: 128,
+  title: x => bright(x),
+});
+// drawTable
 const { sql } = require('./database');
 
 const suffix = '_after_tbw';
@@ -14,10 +19,8 @@ function addChange(change) {
 
 async function revertAllChanges() {
   triggersEnabled = false;
-  await sql.task(async (conn) => {
-    return await Promise.all(changes.map(change => change.revert(conn)));
-  });
-  setTimeout( () =>  { triggersEnabled = true }, 2000);
+  await sql.task(async conn => await Promise.all(changes.map(change => change.revert(conn))));
+  setTimeout(() => { triggersEnabled = true; }, 2000);
 }
 
 
@@ -27,8 +30,8 @@ stdin.resume();
 stdin.setEncoding('utf8');
 stdin.on('data', (key) => {
   if (key === 'r' || key === 'R') {
-    console.log("All changes reverted!")
-    revertAllChanges()
+    console.log('All changes reverted!');
+    revertAllChanges();
   } else if (key === '\u0003') {  // ctrl-c ( end of text )
     process.exit();
   }
@@ -136,32 +139,53 @@ class DeleteChange {
   }
 }
 
+function outputUpdatedRow(rowChanges) {
+  const before = {};
+  const after = {};
+  for (const key of Object.keys(rowChanges)) {
+    if (rowChanges[key] !== null
+        && typeof rowChanges[key] === 'object'
+        && Object.hasOwnProperty.call(rowChanges[key], 'before')) {
+      before[key] = bright(red(rowChanges[key].before));
+      after[key] = bright(green(rowChanges[key].after));
+    } else {
+      before[key] = rowChanges[key];
+    }
+  }
+  const text = drawTable([before, after]);
+  console.log(text);
+}
+
+function outputRow(row, color) {
+  const outputObj = {}
+  for (const key of Object.keys(row)) {
+    outputObj[key] = bright(color(row[key]));
+  }
+  console.log(drawTable([outputObj].slice(0)))
+}
+
 async function onUpdate({ table, before, after }) {
-  if(!triggersEnabled) return;
-  console.log(`UPDATE TABLE: ${table}`);
-  console.log(getChanges(before, after, true));
+  if (!triggersEnabled) return;
+  console.log(bright(magenta(`UPDATED TABLE: ${table}`)));
+  outputUpdatedRow(getChanges(before, after, true));
   const change = new UpdateChange(before, after, table);
-  addChange(change)
-  // const afterAppended = appendToKeys(change.after, suffix);
-  // const sqlCode = change.generateSQL();
-  // console.log(Pg.as.format(sqlCode, { ...afterAppended, ...change.before }));
+  addChange(change);
 }
 
 function onInsert({ table, after }) {
   if (!triggersEnabled) return;
   console.log(`INSERT TABLE: ${table}`);
-  console.log(after);
+  outputRow(after, green);
   const change = new InsertChange(after, table);
-  addChange(change)
-  // change.revert(sql);
+  addChange(change);
 }
 
 function onDelete({ table, before }) {
   if (!triggersEnabled) return;
   console.log(`DELETE TABLE: ${table}`);
-  console.log(before);
+  outputRow(before, red);
   const change = new DeleteChange(before, table);
-  addChange(change)
+  addChange(change);
 }
 
 function getChanges(before, after, includeId = false) {
