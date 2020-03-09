@@ -3,6 +3,12 @@
     "ta2.processed_clocking",
     "ta2.uploaded_clocking"
   ],
+  "excludeTables": [
+    "ta2.uploaded_clocking"
+  ],
+  "schemas": [
+    "ta2"
+  ],
   "envConnectionString": "HRPMPCONN",
   "channels": {
     "update": "table_watcher_update",

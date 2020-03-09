@@ -1,17 +1,22 @@
 
 const { green, red, bright, magenta } = require('ansicolor');
-const drawTable = require('as-table').configure({ 
-  maxWidth: 128,
-  title: x => bright(x),
-});
-// drawTable
+const Table = require('table-layout');
+
 const { sql } = require('./database');
+
+const tableConfig = {
+  ignoreEmptyColumns: false,
+  maxWidth: 128,
+};
+
+const ROW_SIZE = 12;
+
 
 const suffix = '_after_tbw';
 
 let triggersEnabled = true;
 
-const changes = [];
+let changes = [];
 
 function addChange(change) {
   changes.push(change);
@@ -19,8 +24,15 @@ function addChange(change) {
 
 async function revertAllChanges() {
   triggersEnabled = false;
-  await sql.task(async conn => await Promise.all(changes.map(change => change.revert(conn))));
-  setTimeout(() => { triggersEnabled = true; }, 2000);
+  console.log()
+  await sql.task(async conn => await Promise.all(changes.reverse().map(change => change.revert(conn))));
+  await sql.any('COMMIT;');
+
+  return new Promise(resolve => setTimeout(() => { 
+    triggersEnabled = true; 
+    resolve(); 
+    changes = [];
+  }, 2000));
 }
 
 
@@ -28,10 +40,11 @@ const stdin = process.stdin;
 stdin.setRawMode(true);
 stdin.resume();
 stdin.setEncoding('utf8');
-stdin.on('data', (key) => {
+stdin.on('data', async (key) => {
   if (key === 'r' || key === 'R') {
+    console.log(`Reverting ${changes.length} changes. The change listener is temporarily disabled.`)
+    await revertAllChanges();
     console.log('All changes reverted!');
-    revertAllChanges();
   } else if (key === '\u0003') {  // ctrl-c ( end of text )
     process.exit();
   }
@@ -99,7 +112,7 @@ class UpdateChange {
     return `
     UPDATE ${this.table} 
     SET ${createSetChain(this.changes)}
-    WHERE ${createAndChain(this.before, suffix)}`;
+    WHERE ${createAndChain(this.after, suffix)}`;
   }
 }
 
@@ -139,51 +152,80 @@ class DeleteChange {
   }
 }
 
+function getLabels(obj) {
+  const res = {};
+  for (const key of Object.keys(obj)) {
+    res[key] = bright(key);
+  }
+  return res;
+}
+
+function surroundStringByQuotes(value) {
+  if(typeof value === 'string') {
+    return `\`${value}\``;
+  } 
+  return value;
+}
+
 function outputUpdatedRow(rowChanges) {
   const before = {};
   const after = {};
   for (const key of Object.keys(rowChanges)) {
-    if (rowChanges[key] !== null
-        && typeof rowChanges[key] === 'object'
+    if (typeof rowChanges[key] === 'object'
+        && rowChanges[key] != null
         && Object.hasOwnProperty.call(rowChanges[key], 'before')) {
-      before[key] = bright(red(rowChanges[key].before));
-      after[key] = bright(green(rowChanges[key].after));
+      before[key] = bright(red(surroundStringByQuotes(rowChanges[key].before)));
+      after[key] = bright(green(surroundStringByQuotes(rowChanges[key].after)));
     } else {
       before[key] = rowChanges[key];
     }
   }
-  const text = drawTable([before, after]);
-  console.log(text);
+  const table = new Table([getLabels(before), before, after], tableConfig);
+  console.log(table.toString());
+}
+
+function breakRow(row, columns) {
+  const rows = [];
+  const allLabels = Object.keys(row);
+  for (let i = 0; i < allLabels.length; i += columns) {
+    const littleRow = {};
+    allLabels.slice(i, i + columns).forEach((key) => { littleRow[key] = row[key]; });
+    rows.push(littleRow);
+  }
+  return rows;
 }
 
 function outputRow(row, color) {
-  const outputObj = {}
+  const outputObj = {};
   for (const key of Object.keys(row)) {
-    outputObj[key] = bright(color(row[key]));
+    if (row[key] != null) {
+      outputObj[key] = bright(color(surroundStringByQuotes(row[key])));
+    }
   }
-  console.log(drawTable([outputObj].slice(0)))
+  const table = new Table([getLabels(outputObj), outputObj]);
+  console.log(table.toString());
 }
 
 async function onUpdate({ table, before, after }) {
   if (!triggersEnabled) return;
   console.log(bright(magenta(`UPDATED TABLE: ${table}`)));
-  outputUpdatedRow(getChanges(before, after, true));
+  breakRow(getChanges(before, after, true), ROW_SIZE).forEach(outputUpdatedRow);
   const change = new UpdateChange(before, after, table);
   addChange(change);
 }
 
 function onInsert({ table, after }) {
   if (!triggersEnabled) return;
-  console.log(`INSERT TABLE: ${table}`);
-  outputRow(after, green);
+  console.log(magenta(`INSERT TABLE: ${table}`));
+  breakRow(after, ROW_SIZE).forEach(row => outputRow(row, green));
   const change = new InsertChange(after, table);
   addChange(change);
 }
 
 function onDelete({ table, before }) {
   if (!triggersEnabled) return;
-  console.log(`DELETE TABLE: ${table}`);
-  outputRow(before, red);
+  console.log(magenta(`DELETE TABLE: ${table}`));
+  breakRow(before, ROW_SIZE).forEach(row => outputRow(row, green));
   const change = new DeleteChange(before, table);
   addChange(change);
 }
