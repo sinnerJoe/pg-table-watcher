@@ -1,8 +1,8 @@
 
 const { green, red, bright, magenta } = require('ansicolor');
 const Table = require('table-layout');
-
-const { sql } = require('./database');
+const { usedTriggers } = require('./constants'); 
+const { sql, dropTrigger } = require('./database');
 
 const tableConfig = {
   ignoreEmptyColumns: false,
@@ -49,6 +49,9 @@ stdin.on('data', async (key) => {
     await revertAllChanges();
     console.log('All changes reverted!');
   } else if (key === '\u0003') {  // ctrl-c ( end of text )
+    // for(const key of Object.keys(usedTriggers)) {
+    //   await dropTrigger(key, )
+    // }
     process.exit();
   }
 });
@@ -207,10 +210,20 @@ function outputRow(row, color) {
   console.log(table.toString());
 }
 
+function isAnyDiff(diffs) {
+  return Object.keys(diffs).some(
+    (key) => (diffs[key] && typeof diffs[key] === 'object' && Objecct.hasOwnProperty.call(diffs[key], 'before')));
+}
+
 async function onUpdate({ table, before, after }) {
   if (!triggersEnabled) return;
   console.log(bright(magenta(`UPDATED TABLE: ${table}`)));
-  breakRow(getChanges(before, after, true), ROW_SIZE).forEach(outputUpdatedRow);
+  const diffs = getChanges(before, after, true);
+  breakRow(diffs, ROW_SIZE).forEach(outputUpdatedRow);
+  if(!isAnyDiff(diffs)) {
+    console.log("There are no differences in updated data")
+    return;
+  }
   const change = new UpdateChange(before, after, table);
   addChange(change);
 }

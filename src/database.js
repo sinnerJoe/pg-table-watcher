@@ -24,6 +24,7 @@ const sqlFiles = {
   updateTrigger: qFile('updateTrigger'),
   getTableTriggers: qFile('getTableTriggers'),
   getAllTables: qFile('getAllTables'),
+  clearTableTriggers: qFile('clearTableTriggers'),
 };
 
 function throwIfFalsy(entityName, entity = 'table name') {
@@ -66,10 +67,15 @@ async function notificationListen(channels, listener) {
   return Promise.all(channels.map(channel => connection.none('LISTEN $1~', channel)));
 }
 
+async function dropTrigger(trigger, table) {
+  return sql.none(sqlFiles.clearTableTriggers, { table, trigger });
+}
+
 module.exports = {
   createInsertTrigger,
   createDeleteTrigger,
   createUpdateTrigger,
+  dropTrigger,
   declareFunctions,
   getTableTriggers,
   getAllTableNames,
