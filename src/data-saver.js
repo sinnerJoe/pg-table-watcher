@@ -24,13 +24,12 @@ function addChange(change) {
 
 async function revertAllChanges() {
   triggersEnabled = false;
-  console.log()
   await sql.task(async conn => await Promise.all(changes.reverse().map(change => change.revert(conn))));
   await sql.any('COMMIT;');
 
-  return new Promise(resolve => setTimeout(() => { 
-    triggersEnabled = true; 
-    resolve(); 
+  return new Promise(resolve => setTimeout(() => {
+    triggersEnabled = true;
+    resolve();
     changes = [];
   }, 2000));
 }
@@ -42,11 +41,11 @@ stdin.resume();
 stdin.setEncoding('utf8');
 stdin.on('data', async (key) => {
   if (key === 'r' || key === 'R') {
-    if(changes.length === 0) {
-      console.log("There are registered changes to the DB!");
+    if (changes.length === 0) {
+      console.log('There are no registered changes to the DB!');
       return;
     }
-    console.log(`Reverting ${changes.length} changes. The change listener is temporarily disabled.`)
+    console.log(`Reverting ${changes.length} changes. The change listener is temporarily disabled.`);
     await revertAllChanges();
     console.log('All changes reverted!');
   } else if (key === '\u0003') {  // ctrl-c ( end of text )
@@ -165,9 +164,9 @@ function getLabels(obj) {
 }
 
 function surroundStringByQuotes(value) {
-  if(typeof value === 'string') {
+  if (typeof value === 'string') {
     return `\`${value}\``;
-  } 
+  }
   return value;
 }
 
@@ -202,9 +201,7 @@ function breakRow(row, columns) {
 function outputRow(row, color) {
   const outputObj = {};
   for (const key of Object.keys(row)) {
-    if (row[key] != null) {
-      outputObj[key] = bright(color(surroundStringByQuotes(row[key])));
-    }
+    outputObj[key] = bright(color(surroundStringByQuotes(row[key])));
   }
   const table = new Table([getLabels(outputObj), outputObj]);
   console.log(table.toString());
