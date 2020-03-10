@@ -47,7 +47,7 @@ async function getMissingTriggers(table) {
 }
 
 function createTrigger(table, operation) {
-  switch(operation) {
+  switch (operation) {
     case 'INSERT':
       return database.createInsertTrigger(table.fullName);
     case 'UPDATE':
@@ -110,7 +110,7 @@ function removeTablesFromCollection(collection, tables) {
 
 (
   async () => {
-    let configTables = {};
+    const configTables = {};
     const existingTables = await getExistingTables();
     if(isStringArray(config.tables)) {
       const tables = separateTablenames(prependPublic(config.tables));
@@ -121,7 +121,7 @@ function removeTablesFromCollection(collection, tables) {
         throw new Error('The following tables weren\'t found in the database: ' + wrongTableNames.join(', '));
       }
     }
-    
+
     if(isStringArray(config.schemas)){
       const tables = getTablesFromSchemas(existingTables, new Set(config.schemas));
       addTablesToCollection(configTables, tables);

@@ -42,6 +42,10 @@ stdin.resume();
 stdin.setEncoding('utf8');
 stdin.on('data', async (key) => {
   if (key === 'r' || key === 'R') {
+    if(changes.length === 0) {
+      console.log("There are registered changes to the DB!");
+      return;
+    }
     console.log(`Reverting ${changes.length} changes. The change listener is temporarily disabled.`)
     await revertAllChanges();
     console.log('All changes reverted!');
