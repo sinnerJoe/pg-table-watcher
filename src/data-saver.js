@@ -6,7 +6,7 @@ const { sql, dropTrigger } = require('./database');
 
 const tableConfig = {
   ignoreEmptyColumns: false,
-  maxWidth: 128,
+  maxWidth: 40,
 };
 
 const ROW_SIZE = 12;
@@ -158,6 +158,27 @@ class DeleteChange {
   }
 }
 
+function wrapLongString(str, colorText) {
+  const widthLimit = tableConfig.maxWidth - 1;
+  if(str.length < widthLimit) {
+    return str;
+  }
+  
+  let i = 0;
+  let buildStr = '';
+  while (str.length > i) {
+    const closestSpace = str.indexOf(' ', i);
+    if(closestSpace === -1 || closestSpace > i + widthLimit) {
+      buildStr += colorText(str.substring(i, i + widthLimit) + ' ');
+      i += widthLimit;
+    } else {
+      buildStr += colorText(str.substring(i, closestSpace + 1));
+      i = closestSpace + 1;
+    }
+  }
+  return buildStr;
+}
+
 function getLabels(obj) {
   const res = {};
   for (const key of Object.keys(obj)) {
@@ -166,11 +187,11 @@ function getLabels(obj) {
   return res;
 }
 
-function surroundStringByQuotes(value) {
+function decorateValue(value, colorText) {
   if (typeof value === 'string') {
-    return `\`${value}\``;
+    return wrapLongString(`\`${value}\``, colorText);
   }
-  return value;
+  return colorText(value);
 }
 
 function outputUpdatedRow(rowChanges) {
@@ -180,8 +201,8 @@ function outputUpdatedRow(rowChanges) {
     if (typeof rowChanges[key] === 'object'
         && rowChanges[key] != null
         && Object.hasOwnProperty.call(rowChanges[key], 'before')) {
-      before[key] = bright(red(surroundStringByQuotes(rowChanges[key].before)));
-      after[key] = bright(green(surroundStringByQuotes(rowChanges[key].after)));
+      before[key] = decorateValue(rowChanges[key].before, (v) => bright(red(v)));
+      after[key] = decorateValue(rowChanges[key].after, (v) => bright(green(v)));
     } else {
       before[key] = rowChanges[key];
     }
@@ -204,7 +225,7 @@ function breakRow(row, columns) {
 function outputRow(row, color) {
   const outputObj = {};
   for (const key of Object.keys(row)) {
-    outputObj[key] = bright(color(surroundStringByQuotes(row[key])));
+    outputObj[key] = decorateValue(row[key], (v) => bright(color(v)));
   }
   const table = new Table([getLabels(outputObj), outputObj]);
   console.log(table.toString());
@@ -239,7 +260,7 @@ function onInsert({ table, after }) {
 function onDelete({ table, before }) {
   if (!triggersEnabled) return;
   console.log(magenta(`DELETE TABLE: ${table}`));
-  breakRow(before, ROW_SIZE).forEach(row => outputRow(row, green));
+  breakRow(before, ROW_SIZE).forEach(row => outputRow(row, red));
   const change = new DeleteChange(before, table);
   addChange(change);
 }
