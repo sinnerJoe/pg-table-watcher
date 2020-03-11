@@ -4,8 +4,7 @@
   "description": "Watches and reverts table states on command",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon ./index.js",
-    "lint": "eslint lib --fix"
+    "start": "node ./src/index.js"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
