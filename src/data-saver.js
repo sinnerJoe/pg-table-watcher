@@ -212,7 +212,7 @@ function outputRow(row, color) {
 
 function isAnyDiff(diffs) {
   return Object.keys(diffs).some(
-    (key) => (diffs[key] && typeof diffs[key] === 'object' && Objecct.hasOwnProperty.call(diffs[key], 'before')));
+    (key) => (diffs[key] && typeof diffs[key] === 'object' && Object.hasOwnProperty.call(diffs[key], 'before')));
 }
 
 async function onUpdate({ table, before, after }) {
