@@ -238,7 +238,7 @@ function isAnyDiff(diffs) {
 
 async function onUpdate({ table, before, after }) {
   if (!triggersEnabled) return;
-  console.log(bright(magenta(`UPDATED TABLE: ${table}`)));
+  console.log(bright(magenta(`UPDATE TABLE: ${table}`)));
   const diffs = getChanges(before, after, true);
   breakRow(diffs, ROW_SIZE).forEach(outputUpdatedRow);
   if(!isAnyDiff(diffs)) {
@@ -251,7 +251,7 @@ async function onUpdate({ table, before, after }) {
 
 function onInsert({ table, after }) {
   if (!triggersEnabled) return;
-  console.log(magenta(`INSERT TABLE: ${table}`));
+  console.log(bright(magenta(`INSERT IN TABLE: ${table}`)));
   breakRow(after, ROW_SIZE).forEach(row => outputRow(row, green));
   const change = new InsertChange(after, table);
   addChange(change);
@@ -259,7 +259,7 @@ function onInsert({ table, after }) {
 
 function onDelete({ table, before }) {
   if (!triggersEnabled) return;
-  console.log(magenta(`DELETE TABLE: ${table}`));
+  console.log(bright(magenta(`DELETE FROM TABLE: ${table}`)));
   breakRow(before, ROW_SIZE).forEach(row => outputRow(row, red));
   const change = new DeleteChange(before, table);
   addChange(change);
